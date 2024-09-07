@@ -15,7 +15,7 @@ import {
   BedrockRuntimeServiceException,
 } from "@aws-sdk/client-bedrock-runtime";
 
-import type { ChatRequest, FunctionInput } from "./schema";
+import type { ChatRequest, FunctionInput, UserMessage } from "./schema";
 
 export class BedrockModel {
   async _invokeBedrock(

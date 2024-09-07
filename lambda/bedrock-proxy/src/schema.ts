@@ -12,6 +12,28 @@ const ToolCall = z.object({
   function: ResponseFunction,
 });
 
+const TextContentSchema = z.object({
+  text: z.string(),
+});
+
+const ImageUrlSchema = z.object({
+  url: z.string(),
+  detail: z.string().optional(),
+});
+
+const ImageContentSchema = z.object({
+  image_url: ImageUrlSchema,
+});
+
+const UserMessageSchema = z.object({
+  name: z.string().optional(),
+  role: z.literal("user"),
+  content: z.union([
+    z.string(),
+    z.array(z.union([TextContentSchema, ImageContentSchema])),
+  ]),
+});
+
 const MessageSchema = z.union([
   z.object({
     name: z.string().optional(),
@@ -71,3 +93,4 @@ export const ChatRequestSchema = z.object({
 
 export type FunctionInput = z.infer<typeof FunctionSchema>;
 export type ChatRequest = z.infer<typeof ChatRequestSchema>;
+export type UserMessage = z.infer<typeof UserMessageSchema>;
