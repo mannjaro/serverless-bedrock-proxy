@@ -1,0 +1,22 @@
+{
+  "name": "bedrock-proxy",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild --bundle --outfile=./dist/index.js --platform=node --target=node20 ./src/index.ts",
+    "dev": "bun run --hot src/index.ts",
+    "zip": "zip -j lambda.zip dist/index.js",
+    "update": "aws lambda update-function-code --zip-file fileb://lambda.zip --function-name hello",
+    "deploy": "run-s build zip update"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.4",
+    "npm-run-all2": "^6.2.0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.642.0",
+    "@hono/zod-validator": "^0.2.2",
+    "hono": "^4.5.10",
+    "openai": "^4.57.0",
+    "zod": "^3.23.8"
+  }
+}
