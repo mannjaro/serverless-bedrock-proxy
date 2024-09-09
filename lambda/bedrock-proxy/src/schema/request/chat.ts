@@ -1,15 +1,15 @@
 import { z } from "zod";
 
-const ResponseFunction = z.object({
+const ResponseFunctionSchema = z.object({
   name: z.string().optional(),
   arguments: z.string(),
 });
 
-const ToolCall = z.object({
+const ToolCallSchema = z.object({
   index: z.number().optional(),
   id: z.string().optional(),
   type: z.literal("function"),
-  function: ResponseFunction,
+  function: ResponseFunctionSchema,
 });
 
 const TextContentSchema = z.object({
@@ -49,7 +49,7 @@ const MessageSchema = z.union([
     name: z.string().optional(),
     role: z.literal("assistant"),
     content: z.string().nullable(),
-    tool_calls: z.array(ToolCall).optional(),
+    tool_calls: z.array(ToolCallSchema).optional(),
   }),
   z.object({
     role: z.literal("tool"),

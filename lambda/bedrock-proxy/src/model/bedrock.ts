@@ -15,9 +15,21 @@ import {
   BedrockRuntimeServiceException,
 } from "@aws-sdk/client-bedrock-runtime";
 
-import type { ChatRequest, FunctionInput, UserMessage } from "./schema";
+import { BaseModel } from "./base";
 
-export class BedrockModel {
+import type {
+  ChatRequest,
+  FunctionInput,
+  UserMessage,
+} from "../schema/request/chat";
+
+import type {
+  ChatResponse,
+  ChatResponseMessage,
+  ToolCall,
+} from "../schema/response/chat";
+
+export class BedrockModel extends BaseModel {
   async _invokeBedrock(
     chatRequest: ChatRequest,
     stream: boolean,
@@ -50,6 +62,81 @@ export class BedrockModel {
       }
     }
   }
+
+  async chat(chatRequest: ChatRequest) {
+    const messageId = "";
+    const response = (await this._invokeBedrock(
+      chatRequest,
+      false,
+    )) as ConverseCommandOutput;
+    const outputMessage = response.output?.message;
+    const content = outputMessage?.content;
+    const inputTokens = response.usage?.inputTokens;
+    const outputTokens = response.usage?.outputTokens;
+    const finishReason = response.stopReason;
+    return this._create_response(
+      chatRequest.model,
+      messageId,
+      content,
+      finishReason,
+      inputTokens,
+      outputTokens,
+    );
+  }
+
+  _create_response(
+    model: string,
+    messageId: string,
+    content: ContentBlock[] | undefined,
+    finishReason: string | undefined,
+    inputTokens: number | undefined,
+    outputTokens: number | undefined,
+  ): ChatResponse {
+    const message: ChatResponseMessage = {
+      role: "assistant",
+    };
+    if (finishReason === "tool_use") {
+      const tool_calls = Array<ToolCall>();
+      for (const contentBlock of content || []) {
+        if ("toolUse" in contentBlock) {
+          const tool = contentBlock.toolUse;
+          tool_calls.push({
+            id: tool?.toolUseId,
+            type: "function",
+            function: {
+              name: tool?.name,
+              arguments: JSON.stringify(tool?.input),
+            },
+          });
+        }
+      }
+      message.tool_calls = tool_calls;
+      message.content = undefined;
+    } else if (content && content.length > 0) {
+      message.content = content[0].text;
+    }
+    const response: ChatResponse = {
+      id: messageId,
+      model: model,
+      choices: [
+        {
+          index: 0,
+          message: message,
+          finish_reason: this._convertFinishReason(finishReason),
+        },
+      ],
+      usage: {
+        prompt_tokens: inputTokens || 0,
+        completion_tokens: outputTokens || 0,
+        total_tokens: (inputTokens || 0) + (outputTokens || 0),
+      },
+      system_fingerprint: "fp",
+      object: "chat.completions",
+      created: Date.now(),
+    };
+    return response;
+  }
+
   // Other methods and properties
   async _parseRequest(
     chatRequest: ChatRequest,
@@ -252,5 +339,27 @@ export class BedrockModel {
         },
       },
     };
+  }
+
+  _convertFinishReason(finishReason: string | undefined): string {
+    if (!finishReason) {
+      return "stop";
+    }
+    switch (finishReason.toLowerCase()) {
+      case "tool_use":
+        return "tool_calls";
+      case "finished":
+        return "stop";
+      case "end_turn":
+        return "stop";
+      case "max_tokens":
+        return "length";
+      case "stop_sequence":
+        return "stop";
+      case "content_filtered":
+        return "content_filter";
+      default:
+        return "stop";
+    }
   }
 }
