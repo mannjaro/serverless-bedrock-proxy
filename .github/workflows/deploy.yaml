@@ -46,7 +46,7 @@ jobs:
 
       # 必要な依存関係をインストール
       - name: Install dependencies
-        run: bun install
+        run: bun install --yarn
       
       # デプロイ前に diff をチェック
       - name: CDK Diff Check
