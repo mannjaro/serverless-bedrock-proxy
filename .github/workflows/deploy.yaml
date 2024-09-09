@@ -37,13 +37,16 @@ jobs:
         with:
           node-version: '20'
 
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
       # CDK 環境のセットアップ 
       - name: Install AWS CDK
-        run: npm install -g aws-cdk
+        run: bun install aws-cdk
 
       # 必要な依存関係をインストール
       - name: Install dependencies
-        run: npm ci
+        run: bun install
       
       # デプロイ前に diff をチェック
       - name: CDK Diff Check
