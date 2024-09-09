@@ -42,7 +42,7 @@ jobs:
           bun-version: latest
       # CDK 環境のセットアップ 
       - name: Install AWS CDK
-        run: bun install aws-cdk
+        run: bun install --global aws-cdk
 
       # 必要な依存関係をインストール
       - name: Install dependencies
