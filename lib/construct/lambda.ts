@@ -9,8 +9,18 @@ export class ProxyLambda extends Construct {
     super(scope, id);
     const fn = new NodejsFunction(this, "lambda", {
       entry: "lambda/bedrock-proxy/index.ts",
+      depsLockFilePath: "lambda/bedrock-proxy/package-lock.json",
       handler: "handler",
       runtime: lambda.Runtime.NODEJS_20_X,
+      bundling: {
+        nodeModules: [
+          "hono",
+          "openai",
+          "@aws-sdk/client-bedrock-runtime",
+          "@hono/zod-validator",
+          "zod",
+        ],
+      },
     });
     fn.addFunctionUrl({
       authType: lambda.FunctionUrlAuthType.NONE,
