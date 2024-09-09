@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { handle } from "hono/aws-lambda";
 
-import { chat } from "./api/chat";
+import { chat } from "./src/api/chat";
 
 const app = new Hono();
 
