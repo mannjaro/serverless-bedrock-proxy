@@ -11,5 +11,4 @@ app.get("/", (c) => {
 
 app.route("/chat", chat);
 
-// export const handler = handle(app);
-export default app;
+export const handler = handle(app);
