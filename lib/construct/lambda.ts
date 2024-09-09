@@ -14,6 +14,7 @@ export class ProxyLambda extends Construct {
     });
     fn.addFunctionUrl({
       authType: lambda.FunctionUrlAuthType.NONE,
+      invokeMode: lambda.InvokeMode.RESPONSE_STREAM,
     });
     new apigw.LambdaRestApi(this, "api", {
       handler: fn,
