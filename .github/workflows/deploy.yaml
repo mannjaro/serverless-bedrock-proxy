@@ -43,12 +43,12 @@ jobs:
       - name: Install dependencies
         run: bun install --yarn
       
-      # デプロイ前に diff をチェック
-      - name: CDK Diff Check
+      # CDK デプロイ
+      - name: Deploy CDK Stack (dev)
         if: contains(github.event_name, 'pull_request')
-        run: cdk diff 
+        run: cdk deploy -c env=dev --require-approval never
 
       # CDK デプロイ
-      - name: Deploy CDK Stack
+      - name: Deploy CDK Stack (prod)
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: cdk deploy --require-approval never
+        run: cdk deploy -c env=prod --require-approval never
