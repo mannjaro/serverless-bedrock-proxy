@@ -47,6 +47,13 @@ jobs:
       - name: Install dependencies
         run: bun install --yarn
       
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /var/lib/docker
+          key: ${{ runner.os }}-docker-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-docker-
       # CDK デプロイ
       - name: Deploy CDK Stack (dev)
         if: contains(github.event_name, 'pull_request')
