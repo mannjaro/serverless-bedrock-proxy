@@ -78,7 +78,7 @@ export class BedrockModel extends BaseModel {
     const inputTokens = response.usage?.inputTokens;
     const outputTokens = response.usage?.outputTokens;
     const finishReason = response.stopReason;
-    return this._create_response(
+    return this._createResponse(
       chatRequest.model,
       messageId,
       content,
@@ -95,11 +95,25 @@ export class BedrockModel extends BaseModel {
       true,
     )) as ConverseStreamCommandOutput;
     for await (const chunk of response?.stream || []) {
-      stream.write("");
+      const streamResponse = this._createStreamResponse(
+        chatRequest.model,
+        messageId,
+        chunk,
+      );
+      if (!streamResponse) {
+        continue;
+      }
+      if (streamResponse.choices) {
+        console.log("streamResponse", streamResponse);
+        await stream.write(this.streamResponseToBytes(streamResponse));
+      } else if (chatRequest.stream_options?.include_usage) {
+        await stream.write(this.streamResponseToBytes(streamResponse));
+      }
     }
+    await stream.write(this.streamResponseToBytes(undefined));
   }
 
-  _create_response(
+  _createResponse(
     model: string,
     messageId: string,
     content: ContentBlock[] | undefined,
@@ -152,7 +166,7 @@ export class BedrockModel extends BaseModel {
     return response;
   }
 
-  _create_stream_response(
+  _createStreamResponse(
     model: string,
     messageId: string,
     chunk: ConverseStreamOutput,

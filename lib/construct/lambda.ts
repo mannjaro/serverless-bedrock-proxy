@@ -19,11 +19,20 @@ export class ProxyLambda extends Construct {
       iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonBedrockFullAccess"),
     );
 
-    const fn = new NodejsFunction(this, "lambda", {
+    const paramStoreLayer = lambda.LayerVersion.fromLayerVersionArn(
+      this,
+      "paramStoreLayer",
+      "arn:aws:lambda:ap-northeast-1:133490724326:layer:AWS-Parameters-and-Secrets-Lambda-Extension-Arm64:11",
+    );
+
+    const fn = new NodejsFunction(this, "Lambda", {
       entry: "lambda/bedrock-proxy/index.ts",
       handler: "handler",
       runtime: lambda.Runtime.NODEJS_20_X,
       role: role,
+      timeout: cdk.Duration.seconds(30),
+      architecture: lambda.Architecture.ARM_64,
+      layers: [paramStoreLayer],
     });
     fn.addFunctionUrl({
       authType: lambda.FunctionUrlAuthType.NONE,
