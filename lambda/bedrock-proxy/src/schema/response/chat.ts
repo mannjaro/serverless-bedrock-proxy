@@ -14,12 +14,12 @@ const ResponseFunctionSchema = z.object({
 const ToolCallSchema = z.object({
   index: z.number().optional(),
   id: z.string().optional(),
-  type: z.literal("function"),
+  type: z.literal("function").default("function"),
   function: ResponseFunctionSchema,
 });
 
 const ChatResponseMessageSchema = z.object({
-  role: z.literal("assistant"),
+  role: z.literal("assistant").default("assistant"),
   content: z.string().optional(),
   tool_calls: z.array(ToolCallSchema).optional(),
 });
@@ -33,6 +33,12 @@ const BaseChoiceSchema = z.object({
 const ChoiceSchema = BaseChoiceSchema.merge(
   z.object({
     message: ChatResponseMessageSchema,
+  }),
+);
+
+const ChoiceDeltaSchema = BaseChoiceSchema.merge(
+  z.object({
+    delta: ChatResponseMessageSchema,
   }),
 );
 
@@ -51,8 +57,18 @@ const ChatResponseSchema = BaseChatResponseSchema.merge(
   }),
 );
 
+const ChatStreamResponseSchema = BaseChatResponseSchema.merge(
+  z.object({
+    choices: z.array(ChoiceDeltaSchema),
+    object: z.literal("chat.completion.chunk"),
+    usage: UsageSchema.optional(),
+  }),
+);
+
 export type ChatResponse = z.infer<typeof ChatResponseSchema>;
+export type ChatStreamResponse = z.infer<typeof ChatStreamResponseSchema>;
 export type ChatResponseMessage = z.infer<typeof ChatResponseMessageSchema>;
 export type ToolCall = z.infer<typeof ToolCallSchema>;
 export type ResponseFunction = z.infer<typeof ResponseFunctionSchema>;
 export type Choice = z.infer<typeof ChoiceSchema>;
+export type ChoiceDelta = z.infer<typeof ChoiceDeltaSchema>;

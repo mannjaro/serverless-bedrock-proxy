@@ -9,6 +9,8 @@ import type {
   ConverseStreamCommandInput,
   ContentBlock,
   ImageFormat,
+  ConverseStreamOutput,
+  StopReason,
 } from "@aws-sdk/client-bedrock-runtime";
 import {
   BedrockRuntime,
@@ -25,9 +27,11 @@ import type {
 
 import type {
   ChatResponse,
+  ChatStreamResponse,
   ChatResponseMessage,
   ToolCall,
 } from "../schema/response/chat";
+import { StreamingApi } from "hono/utils/stream";
 
 export class BedrockModel extends BaseModel {
   async _invokeBedrock(
@@ -74,7 +78,7 @@ export class BedrockModel extends BaseModel {
     const inputTokens = response.usage?.inputTokens;
     const outputTokens = response.usage?.outputTokens;
     const finishReason = response.stopReason;
-    return this._create_response(
+    return this._createResponse(
       chatRequest.model,
       messageId,
       content,
@@ -84,7 +88,32 @@ export class BedrockModel extends BaseModel {
     );
   }
 
-  _create_response(
+  async chatStream(chatRequest: ChatRequest, stream: StreamingApi) {
+    const messageId = "";
+    const response = (await this._invokeBedrock(
+      chatRequest,
+      true,
+    )) as ConverseStreamCommandOutput;
+    for await (const chunk of response?.stream || []) {
+      const streamResponse = this._createStreamResponse(
+        chatRequest.model,
+        messageId,
+        chunk,
+      );
+      if (!streamResponse) {
+        continue;
+      }
+      if (streamResponse.choices) {
+        console.log("streamResponse", streamResponse);
+        await stream.write(this.streamResponseToBytes(streamResponse));
+      } else if (chatRequest.stream_options?.include_usage) {
+        await stream.write(this.streamResponseToBytes(streamResponse));
+      }
+    }
+    await stream.write(this.streamResponseToBytes(undefined));
+  }
+
+  _createResponse(
     model: string,
     messageId: string,
     content: ContentBlock[] | undefined,
@@ -135,6 +164,116 @@ export class BedrockModel extends BaseModel {
       created: Date.now(),
     };
     return response;
+  }
+
+  _createStreamResponse(
+    model: string,
+    messageId: string,
+    chunk: ConverseStreamOutput,
+  ): ChatStreamResponse | undefined {
+    let message: ChatResponseMessage | undefined;
+    let finishReason: StopReason | undefined;
+    if ("messageStart" in chunk) {
+      message = {
+        role: "assistant",
+        content: "",
+      };
+    }
+    if ("contentBlockStart" in chunk) {
+      const delta = chunk.contentBlockStart?.start;
+      if (delta && "toolUse" in delta) {
+        const index =
+          chunk.contentBlockStart?.contentBlockIndex !== undefined
+            ? chunk.contentBlockStart?.contentBlockIndex - 1
+            : -1;
+        message = {
+          role: "assistant",
+          tool_calls: [
+            {
+              index: index,
+              type: "function",
+              id: delta.toolUse?.toolUseId || "",
+              function: {
+                name: delta.toolUse?.name || "",
+                arguments: "",
+              },
+            },
+          ],
+        };
+      }
+    }
+    if ("contentBlockDelta" in chunk) {
+      const delta = chunk.contentBlockDelta?.delta;
+      if (delta && "text" in delta) {
+        message = {
+          role: "assistant",
+          content: delta.text,
+        };
+      } else {
+        const index =
+          chunk.contentBlockDelta?.contentBlockIndex !== undefined
+            ? chunk.contentBlockDelta?.contentBlockIndex - 1
+            : -1;
+        message = {
+          role: "assistant",
+          tool_calls: [
+            {
+              index: index,
+              type: "function",
+              function: {
+                arguments: JSON.stringify(delta?.toolUse?.input),
+              },
+            },
+          ],
+        };
+      }
+    }
+    if ("messageStop" in chunk) {
+      message = {
+        role: "assistant",
+      };
+      finishReason = chunk.messageStop?.stopReason;
+    }
+    if ("metadata" in chunk) {
+      const metadata = chunk.metadata;
+      if (metadata && "usage" in metadata) {
+        const usage = metadata.usage;
+        if (usage && "inputTokens" in usage) {
+          return {
+            id: messageId,
+            object: "chat.completion.chunk",
+            created: Date.now(),
+            model: model,
+            system_fingerprint: "fp",
+            choices: [],
+            usage: {
+              prompt_tokens: usage.inputTokens || 0,
+              completion_tokens: usage.outputTokens || 0,
+              total_tokens:
+                (usage.inputTokens || 0) + (usage.outputTokens || 0),
+            },
+          };
+        }
+      }
+    }
+    if (message) {
+      return {
+        id: messageId,
+        model: model,
+        system_fingerprint: "fp",
+        choices: [
+          {
+            index: 0,
+            delta: message,
+            logprobs: undefined,
+            finish_reason: this._convertFinishReason(finishReason),
+          },
+        ],
+        created: Date.now(),
+        object: "chat.completion.chunk",
+      };
+    }
+    return undefined;
   }
 
   // Other methods and properties

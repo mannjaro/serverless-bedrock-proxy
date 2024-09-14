@@ -10,4 +10,4 @@ app.get("/", (c) => {
 
 app.route("/chat", chat);
 
-export { app };
+export default app;
