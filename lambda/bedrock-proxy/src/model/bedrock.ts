@@ -3,6 +3,8 @@ import type {
   Tool,
   ToolResultBlock,
   ToolUseBlock,
+  InvokeModelCommandInput,
+  InvokeModelCommandOutput,
   ConverseCommandOutput,
   ConverseStreamCommandOutput,
   ConverseCommandInput,
@@ -15,6 +17,7 @@ import type {
 import {
   BedrockRuntime,
   BedrockRuntimeServiceException,
+  ValidationException,
 } from "@aws-sdk/client-bedrock-runtime";
 
 import { BaseModel } from "./base";
@@ -24,14 +27,18 @@ import type {
   FunctionInput,
   UserMessage,
 } from "../schema/request/chat";
-
+import type { EmbeddingRequest } from "../schema/request/embedding";
+import type {
+  Embedding,
+  EmbeddingResponse,
+} from "../schema/response/embedding";
 import type {
   ChatResponse,
   ChatStreamResponse,
   ChatResponseMessage,
   ToolCall,
 } from "../schema/response/chat";
-import { StreamingApi } from "hono/utils/stream";
+import type { StreamingApi } from "hono/utils/stream";
 
 export class BedrockModel extends BaseModel {
   async _invokeBedrock(
@@ -500,5 +507,50 @@ export class BedrockModel extends BaseModel {
       default:
         return "stop";
     }
+  }
+}
+
+export class BedrockEmbeddingModel {
+  _invokeModel(embeddingRequest: EmbeddingRequest) {
+    const bedrockRuntime = new BedrockRuntime({ region: "us-east-1" });
+    const input: InvokeModelCommandInput = {
+      modelId: embeddingRequest.model,
+      body: embeddingRequest.input,
+      accept: "application/json",
+      contentType: "application/json",
+    };
+    try {
+      const response = bedrockRuntime.invokeModel(input);
+      return response;
+    } catch (error) {
+      if (error instanceof ValidationException) {
+        throw new Error(`HTTPException: ${error.message}`);
+      }
+      throw error;
+    }
+  }
+  _createEmbeddingResponse(
+    embeddings: Array<number>,
+    model: string,
+    inputTokens: number,
+    outputTokens: number,
+    encodingFormat: "float" | "base64",
+  ): EmbeddingResponse {
+    const data: Array<Embedding> = [];
+    data.push({
+      object: "embedding",
+      index: 0,
+      embedding: embeddings,
+    });
+    return {
+      object: "list",
+      data: data,
+      model: model,
+      usage: {
+        prompt_tokens: inputTokens,
+        completion_tokens: outputTokens,
+        total_tokens: inputTokens + outputTokens,
+      },
+    };
   }
 }

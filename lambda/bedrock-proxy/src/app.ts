@@ -1,8 +1,13 @@
 import { Hono } from "hono";
 
-import { chat } from "./api/chat";
+import type { LambdaEvent } from "hono/aws-lambda";
 
-const app = new Hono();
+import { chat } from "./api/chat";
+type Bindings = {
+  event: LambdaEvent;
+};
+
+const app = new Hono<{ Bindings: Bindings }>();
 
 app.get("/", (c) => {
   return c.text("ok");
