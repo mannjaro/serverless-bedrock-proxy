@@ -1,0 +1,31 @@
+name: Code quality
+
+on:
+  push:
+  pull_request:
+
+
+jobs:
+  quality:
+    permissions:
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Biome
+        uses: biomejs/setup-biome@v2
+        with:
+          version: latest
+      - name: Run biome check
+        run: biome check **/*.ts --write
+      - name: Commit and push
+        continue-on-error: true
+        run: |
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git config user.name github-actions[bot]
+          git add .
+          git commit -m "format by bot"
+          git push
+      - name: Run Biome
+        run: biome ci **/*.ts

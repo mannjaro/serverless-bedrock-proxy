@@ -26,8 +26,7 @@ jobs:
             platforms: linux/arm64
       # リポジトリをクローンする
       - name: Checkout repository
-        uses: actions/checkout@v4
-      
+        uses: actions/checkout@v4 
       # AWS の認証
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
