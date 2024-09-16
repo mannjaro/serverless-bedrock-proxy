@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { BedrockModel } from "../model/bedrock";
+import { BedrockModel } from "../model/bedrock/chat";
 import { zValidator } from "@hono/zod-validator";
 
 import { ChatRequestSchema } from "../schema/request/chat";

@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import type { LambdaEvent } from "hono/aws-lambda";
 
 import { chat } from "./api/chat";
+import { embedding } from "./api/embedding";
 type Bindings = {
   event: LambdaEvent;
 };
@@ -14,5 +15,5 @@ app.get("/", (c) => {
 });
 
 app.route("/chat", chat);
-
+app.route("/embeddings", embedding);
 export default app;
