@@ -17,5 +17,13 @@ jobs:
         uses: biomejs/setup-biome@v2
         with:
           version: latest
+      - name: Run biome check
+        run: biome check **/*.ts --write
+      - name: Commit and push
+        run: |
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .
+          git commit -m "format by bot"
+          git push
       - name: Run Biome
-        run: biome ci . --reporter=github
+        run: biome ci **/*.ts

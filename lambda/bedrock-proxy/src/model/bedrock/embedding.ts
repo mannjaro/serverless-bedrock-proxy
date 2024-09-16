@@ -1,10 +1,13 @@
 import {
   BedrockRuntime,
+  type InvokeModelCommandInput,
   ValidationException,
-  InvokeModelCommandInput,
 } from "@aws-sdk/client-bedrock-runtime";
-import { EmbeddingRequest } from "../../schema/request/embedding";
-import { EmbeddingResponse, Embedding } from "../../schema/response/embedding";
+import type { EmbeddingRequest } from "../../schema/request/embedding";
+import type {
+  Embedding,
+  EmbeddingResponse,
+} from "../../schema/response/embedding";
 
 interface InvokeModelArgs {
   texts: Array<string>;

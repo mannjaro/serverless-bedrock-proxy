@@ -1,16 +1,16 @@
 import type {
+  ContentBlock,
+  ConverseCommandInput,
+  ConverseCommandOutput,
+  ConverseStreamCommandInput,
+  ConverseStreamCommandOutput,
+  ConverseStreamOutput,
+  ImageFormat,
   Message,
+  StopReason,
   Tool,
   ToolResultBlock,
   ToolUseBlock,
-  ConverseCommandOutput,
-  ConverseStreamCommandOutput,
-  ConverseCommandInput,
-  ConverseStreamCommandInput,
-  ContentBlock,
-  ImageFormat,
-  ConverseStreamOutput,
-  StopReason,
 } from "@aws-sdk/client-bedrock-runtime";
 import {
   BedrockRuntime,
@@ -19,6 +19,7 @@ import {
 
 import { BaseModel } from "../base";
 
+import type { StreamingApi } from "hono/utils/stream";
 import type {
   ChatRequest,
   FunctionInput,
@@ -26,11 +27,10 @@ import type {
 } from "../../schema/request/chat";
 import type {
   ChatResponse,
-  ChatStreamResponse,
   ChatResponseMessage,
+  ChatStreamResponse,
   ToolCall,
 } from "../../schema/response/chat";
-import type { StreamingApi } from "hono/utils/stream";
 
 export class BedrockModel extends BaseModel {
   async _invokeBedrock(

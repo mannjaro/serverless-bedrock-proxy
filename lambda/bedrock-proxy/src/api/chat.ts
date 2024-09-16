@@ -1,9 +1,9 @@
+import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { BedrockModel } from "../model/bedrock/chat";
-import { zValidator } from "@hono/zod-validator";
 
-import { ChatRequestSchema } from "../schema/request/chat";
 import { streamText } from "hono/streaming";
+import { ChatRequestSchema } from "../schema/request/chat";
 
 const chat = new Hono();
 

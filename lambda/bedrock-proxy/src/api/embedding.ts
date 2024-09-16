@@ -1,6 +1,6 @@
+import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { CohereEmbeddingModel } from "../model/bedrock/embedding";
-import { zValidator } from "@hono/zod-validator";
 
 import { EmbeddingRequestSchema } from "../schema/request/embedding";
 
