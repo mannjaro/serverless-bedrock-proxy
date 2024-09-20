@@ -22,7 +22,7 @@
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.645.0",
     "@hono/zod-validator": "^0.2.2",
-    "aws-cdk-lib": "2.154.1",
+    "aws-cdk-lib": "2.155.0",
     "constructs": "^10.0.0",
     "hono": "^4.5.11",
     "openai": "^4.58.1",
