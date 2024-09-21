@@ -20,11 +20,9 @@ chat.post(
   async (c) => {
     const chatRequest = await c.req.valid("json");
     const model = (() => {
-      if (chatRequest.model.startsWith("gpt")) {
-        return new OpenAIModel();
-    } else {
-        return new BedrockModel();
-      }
+      return chatRequest.model.startsWith("gpt")
+        ? new OpenAIModel()
+        : new BedrockModel();
     })();
     if (chatRequest.stream) {
       return streamText(c, async (stream) => {

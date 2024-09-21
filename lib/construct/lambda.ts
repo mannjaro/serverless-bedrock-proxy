@@ -4,8 +4,12 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Construct } from "constructs";
 
+export interface ProxyLambdaProps extends cdk.StackProps {
+  OPENAI_API_KEY: string;
+}
+
 export class ProxyLambda extends Construct {
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props: ProxyLambdaProps) {
     super(scope, id);
     const role = new iam.Role(this, "Role", {
       assumedBy: new iam.ServicePrincipal("lambda.amazonaws.com"),
@@ -33,6 +37,9 @@ export class ProxyLambda extends Construct {
       timeout: cdk.Duration.seconds(30),
       architecture: lambda.Architecture.ARM_64,
       layers: [paramStoreLayer],
+      environment: {
+        OPENAI_API_KEY: props.OPENAI_API_KEY,
+      },
     });
     fn.addFunctionUrl({
       authType: lambda.FunctionUrlAuthType.NONE,
