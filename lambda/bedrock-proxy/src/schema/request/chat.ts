@@ -1,28 +1,37 @@
 import { z } from "zod";
 
 const ResponseFunctionSchema = z.object({
-  name: z.string().optional(),
+  name: z.string(),
   arguments: z.string(),
 });
 
 const ToolCallSchema = z.object({
-  index: z.number().optional(),
-  id: z.string().optional(),
+  id: z.string(),
   type: z.literal("function"),
   function: ResponseFunctionSchema,
 });
 
 const TextContentSchema = z.object({
+  type: z.literal("text"),
   text: z.string(),
 });
 
 const ImageUrlSchema = z.object({
   url: z.string(),
-  detail: z.string().optional(),
+  detail: z
+    .union([z.literal("auto"), z.literal("low"), z.literal("high")])
+    .optional(),
 });
 
 const ImageContentSchema = z.object({
+  type: z.literal("image_url"),
   image_url: ImageUrlSchema,
+});
+
+const SystemMessageSchema = z.object({
+  name: z.string().optional(),
+  role: z.literal("system"),
+  content: z.union([z.string(), z.array(TextContentSchema)]),
 });
 
 const UserMessageSchema = z.object({
@@ -34,28 +43,24 @@ const UserMessageSchema = z.object({
   ]),
 });
 
+const AssistantMessageSchema = z.object({
+  name: z.string().optional(),
+  role: z.literal("assistant"),
+  content: z.string().nullable(),
+  tool_calls: z.array(ToolCallSchema).optional(),
+});
+
+const ToolMessageSchema = z.object({
+  role: z.literal("tool"),
+  content: z.string(),
+  tool_call_id: z.string(),
+});
+
 const MessageSchema = z.union([
-  z.object({
-    name: z.string().optional(),
-    role: z.literal("system"),
-    content: z.string(),
-  }),
-  z.object({
-    name: z.string().optional(),
-    role: z.literal("user"),
-    content: z.string(),
-  }),
-  z.object({
-    name: z.string().optional(),
-    role: z.literal("assistant"),
-    content: z.string().nullable(),
-    tool_calls: z.array(ToolCallSchema).optional(),
-  }),
-  z.object({
-    role: z.literal("tool"),
-    content: z.string(),
-    tool_call_id: z.string(),
-  }),
+  SystemMessageSchema,
+  UserMessageSchema,
+  AssistantMessageSchema,
+  ToolMessageSchema,
 ]);
 
 const StreamOptionsSchema = z.object({
@@ -87,7 +92,12 @@ export const ChatRequestSchema = z.object({
   n: z.number().optional(),
   tools: z.array(ToolInputSchema).optional(),
   tool_choice: z
-    .union([z.string(), z.object({ function: FunctionSchema })])
+    .union([
+      z.literal("auto"),
+      z.literal("none"),
+      z.literal("required"),
+      z.object({ type: z.literal("function"), function: FunctionSchema }),
+    ])
     .optional(),
 });
 

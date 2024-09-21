@@ -1,6 +1,7 @@
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { BedrockModel } from "../model/bedrock/chat";
+import { OpenAIModel } from "../model/openai/chat";
 
 import { streamText } from "hono/streaming";
 import { ChatRequestSchema } from "../schema/request/chat";
@@ -17,8 +18,14 @@ chat.post(
     }
   }),
   async (c) => {
-    const model = new BedrockModel();
     const chatRequest = await c.req.valid("json");
+    const model = (() => {
+      if (chatRequest.model.startsWith("gpt")) {
+        return new OpenAIModel();
+    } else {
+        return new BedrockModel();
+      }
+    })();
     if (chatRequest.stream) {
       return streamText(c, async (stream) => {
         await model.chatStream(chatRequest, stream);
